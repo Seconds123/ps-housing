@@ -28,14 +28,13 @@ local function isInside(coords)
     end
 
     return false
-
 end
 
 local function getMinMax(shellPos, shellMin, shellMax)
     local min = vector3(shellPos.x + shellMin.x, shellPos.y + shellMin.y, shellPos.z + shellMin.z)
     local max = vector3(shellPos.x + shellMax.x, shellPos.y + shellMax.y, shellPos.z + shellMax.z)
-    
-    return {min = min, max = max}
+
+    return { min = min, max = max }
 end
 
 
@@ -43,7 +42,7 @@ AddEventHandler('freecam:onTick', function()
     if not Modeler.IsFreecamMode then return end
 
     local update = true
-    local lookAt =  Freecam:GetTarget(5.0)
+    local lookAt = Freecam:GetTarget(5.0)
     local camPos = Freecam:GetPosition()
 
     -- see if camPos is the same as the last one
@@ -62,12 +61,13 @@ AddEventHandler('freecam:onTick', function()
     end
 
     if not isInside(camPos) then
-        Freecam:SetPosition(Modeler.CurrentCameraPosition.x, Modeler.CurrentCameraPosition.y, Modeler.CurrentCameraPosition.z)
+        Freecam:SetPosition(Modeler.CurrentCameraPosition.x, Modeler.CurrentCameraPosition.y,
+            Modeler.CurrentCameraPosition.z)
         update = false
     end
 
     if update then
-        Modeler.CurrentCameraLookAt =  lookAt
+        Modeler.CurrentCameraLookAt = lookAt
         Modeler.CurrentCameraPosition = camPos
     end
 
@@ -107,19 +107,17 @@ Modeler = {
     HoverDistance = 5.0,
 
     OpenMenu = function(self, property_id)
-
-
         local property = Property.Get(property_id)
 
         if not property then return end
         if not property.owner and not property.has_access then return end
-        if property.has_access and not Config.AccessCanEditFurniture  then return end 
+        if property.has_access and not Config.AccessCanEditFurniture then return end
 
         self.shellPos = GetEntityCoords(property.shellObj)
         local min, max = GetModelDimensions(property.shellData.hash)
 
         self.shellMinMax = getMinMax(self.shellPos, min, max)
-        
+
         self.property_id = property_id
         self.IsMenuActive = true
 
@@ -146,9 +144,9 @@ Modeler = {
         self:ClearCart()
 
         SendNUIMessage({
-			action = "setOwnedItems",
-			data = {},
-		})
+            action = "setOwnedItems",
+            data = {},
+        })
 
         SendNUIMessage({
             action = "setVisible",
@@ -211,21 +209,22 @@ Modeler = {
         local objectRot
         local objectPos
 
-        Modeler.CurrentCameraLookAt =  Freecam:GetTarget(5.0)
+        Modeler.CurrentCameraLookAt = Freecam:GetTarget(5.0)
         Modeler.CurrentCameraPosition = Freecam:GetPosition()
 
         if data.entity then --if the object is already spawned
             curObject = data.entity
             objectPos = GetEntityCoords(curObject)
             objectRot = GetEntityRotation(curObject)
-        else 
+        else
             local hash = GetHashKey(object)
             if not IsModelInCdimage(hash) then return end
             self:StopPlacement()
             lib.requestModel(hash)
 
             curObject = CreateObject(hash, 0.0, 0.0, 0.0, false, true, false)
-            SetEntityCoords(curObject, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y, self.CurrentCameraLookAt.z)
+            SetEntityCoords(curObject, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y, self.CurrentCameraLookAt
+                .z)
 
             objectRot = GetEntityRotation(curObject)
             objectPos = self.CurrentCameraLookAt
@@ -243,7 +242,7 @@ Modeler = {
             data = self.CurrentObjectAlpha
         })
 
-        SendNUIMessage({ 
+        SendNUIMessage({
             action = "setupModel",
             data = {
                 objectPosition = objectPos,
@@ -258,21 +257,21 @@ Modeler = {
         self.CurrentObject = curObject
     end,
 
-    MoveObject = function (self, data)
+    MoveObject = function(self, data)
         local coords = vec3(data.x + 0.0, data.y + 0.0, data.z + 0.0)
         if not isInside(coords) then
             return
         end
 
         SetEntityCoords(self.CurrentObject, coords)
-        -- get the current offset of this object in relation to the 
+        -- get the current offset of this object in relation to the
     end,
 
-    RotateObject = function (self, data)
+    RotateObject = function(self, data)
         SetEntityRotation(self.CurrentObject, data.x + 0.0, data.y + 0.0, data.z + 0.0)
     end,
 
-    StopPlacement = function (self)
+    StopPlacement = function(self)
         if self.CurrentObject == nil then return end
 
         local canDelete = true
@@ -304,7 +303,6 @@ Modeler = {
     end,
 
     UpdateFurnitures = function(self)
-
         if not self.IsMenuActive then
             return
         end
@@ -315,19 +313,19 @@ Modeler = {
 
         if not property then return end
         if not property.owner and not property.has_access then return end
-        if property.has_access and not Config.AccessCanEditFurniture  then return end 
+        if property.has_access and not Config.AccessCanEditFurniture then return end
 
 
         SendNUIMessage({
-			action = "setOwnedItems",
-			data = property.furnitureObjs,
-		})
+            action = "setOwnedItems",
+            data = property.furnitureObjs,
+        })
     end,
 
     -- can be better
-    -- everytime "Stop Placement" is pressed on an owned object, it will update the furniture 
+    -- everytime "Stop Placement" is pressed on an owned object, it will update the furniture
     -- maybe should do it all at once when the user leaves the menu????
-    UpdateFurniture = function (self, item)
+    UpdateFurniture = function(self, item)
         local newPos = GetEntityCoords(item.entity)
         local newRot = GetEntityRotation(item.entity)
         DeleteEntity(item.entity)
@@ -342,9 +340,9 @@ Modeler = {
         FreezeEntityPosition(item.entity, true)
 
         local offsetPos = {
-                x = math.floor((newPos.x - self.shellPos.x) * 10000) / 10000,
-                y = math.floor((newPos.y - self.shellPos.y) * 10000) / 10000,
-                z = math.floor((newPos.z - self.shellPos.z) * 10000) / 10000,
+            x = math.floor((newPos.x - self.shellPos.x) * 10000) / 10000,
+            y = math.floor((newPos.y - self.shellPos.y) * 10000) / 10000,
+            z = math.floor((newPos.z - self.shellPos.z) * 10000) / 10000,
         }
 
         local newFurniture = {
@@ -360,20 +358,20 @@ Modeler = {
         TriggerServerEvent("ps-housing:server:updateFurniture", self.property_id, newFurniture)
     end,
 
-    SetObjectAlpha = function (self, data)
+    SetObjectAlpha = function(self, data)
         self.CurrentObjectAlpha = data.alpha
         SetEntityAlpha(self.CurrentObject, self.CurrentObjectAlpha, false)
     end,
 
-    PlaceOnGround = function (self)
+    PlaceOnGround = function(self)
         local x, y, z = table.unpack(GetEntityCoords(self.CurrentObject))
         local ground, z = GetGroundZFor_3dCoord(x, y, z, 0)
         SetEntityCoords(self.CurrentObject, x, y, z)
 
-        return {x = x, y = y, z = z}
+        return { x = x, y = y, z = z }
     end,
 
-    SelectCartItem = function (self, data)
+    SelectCartItem = function(self, data)
         self:StopPlacement()
 
         if data ~= nil then
@@ -381,7 +379,7 @@ Modeler = {
         end
     end,
 
-    AddToCart = function (self, data)
+    AddToCart = function(self, data)
         local item = {
             label = data.label,
             object = data.object,
@@ -403,7 +401,7 @@ Modeler = {
         self.CurrentObject = nil
     end,
 
-    RemoveFromCart = function (self, data)
+    RemoveFromCart = function(self, data)
         local item = data
 
         if item ~= nil then
@@ -418,7 +416,7 @@ Modeler = {
         end
     end,
 
-    UpdateCartItem = function (self, data)
+    UpdateCartItem = function(self, data)
         local item = self.Cart[data.entity]
 
         if item ~= nil then
@@ -426,7 +424,7 @@ Modeler = {
         end
     end,
 
-    ClearCart = function (self)
+    ClearCart = function(self)
         for _, v in pairs(self.Cart) do
             DeleteEntity(v.entity)
         end
@@ -437,13 +435,13 @@ Modeler = {
         })
     end,
 
-    BuyCart = function (self)
+    BuyCart = function(self)
         local items = {}
         local totalPrice = 0
 
-	-- If the cart is empty, return notify
+        -- If the cart is empty, return notify
         if not next(self.Cart) then
-	    Framework[Config.Notify].Notify("Your cart is empty", "error")
+            Framework[Config.Notify].Notify("Your cart is empty", "error")
             return
         end
 
@@ -452,21 +450,19 @@ Modeler = {
             totalPrice = totalPrice + v.price
         end
 
-        PlayerData = QBCore.Functions.GetPlayerData()
-        if PlayerData.money.cash < totalPrice and PlayerData.money.bank < totalPrice then
-	    Framework[Config.Notify].Notify("You don't have enough money!", "error")
+        if ESX.GetAccount("money").money < totalPrice and ESX.GetAccount("bank").money < totalPrice then
+            Framework[Config.Notify].Notify("You don't have enough money!", "error")
             return
         end
 
         for _, v in pairs(self.Cart) do
-
             local offsetPos = {
                 x = math.floor((v.position.x - self.shellPos.x) * 10000) / 10000,
                 y = math.floor((v.position.y - self.shellPos.y) * 10000) / 10000,
                 z = math.floor((v.position.z - self.shellPos.z) * 10000) / 10000,
             }
-            
-            local id = tostring(math.random(100000, 999999)..self.property_id)
+
+            local id = tostring(math.random(100000, 999999) .. self.property_id)
 
             items[#items + 1] = {
                 id = id,
@@ -483,11 +479,11 @@ Modeler = {
         self:ClearCart()
     end,
 
-    SetHoverDistance = function (self, data)
+    SetHoverDistance = function(self, data)
         self.HoverDistance = data + 0.0
     end,
 
-    HoverIn = function (self, data)
+    HoverIn = function(self, data)
         if self.HoverObject then
             local tries = 0
             while DoesEntityExist(self.HoverObject) do
@@ -515,10 +511,11 @@ Modeler = {
 
         self.HoverObject = CreateObject(hash, 0.0, 0.0, 0.0, false, false, isDoor)
 
-        Modeler.CurrentCameraLookAt =  Freecam:GetTarget(self.HoverDistance)
+        Modeler.CurrentCameraLookAt = Freecam:GetTarget(self.HoverDistance)
 
         local camRot = Freecam:GetRotation()
-        SetEntityCoords(self.HoverObject, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y, self.CurrentCameraLookAt.z)
+        SetEntityCoords(self.HoverObject, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y,
+            self.CurrentCameraLookAt.z)
         FreezeEntityPosition(self.HoverObject, true)
         SetEntityCollision(self.HoverObject, false, false)
         SetEntityRotation(self.HoverObject, 0.0, 0.0, camRot.z)
@@ -531,7 +528,7 @@ Modeler = {
         end
     end,
 
-    HoverOut = function (self)
+    HoverOut = function(self)
         if self.HoverObject == nil then return end
         if self.HoverObject and self.HoverObject ~= 0 then
             local tries = 0
@@ -549,14 +546,14 @@ Modeler = {
         self.IsHovering = false
     end,
 
-    SelectOwnedItem = function (self, data)
+    SelectOwnedItem = function(self, data)
         self:StopPlacement()
         if data ~= nil then
             self:StartPlacement(data)
         end
     end,
 
-    RemoveOwnedItem = function (self, data)
+    RemoveOwnedItem = function(self, data)
         local item = data
 
         if item ~= nil then
@@ -571,8 +568,8 @@ Modeler = {
 }
 
 RegisterNUICallback("previewFurniture", function(data, cb)
-	Modeler:StartPlacement(data)
-	cb("ok")
+    Modeler:StartPlacement(data)
+    cb("ok")
 end)
 
 RegisterNUICallback("moveObject", function(data, cb)
@@ -597,7 +594,7 @@ end)
 
 RegisterNUICallback("hideUI", function(data, cb)
     Modeler:CloseMenu()
-	cb("ok")
+    cb("ok")
 end)
 
 RegisterNUICallback("freecamMode", function(data, cb)

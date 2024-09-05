@@ -1,33 +1,34 @@
-QBCore = exports['qb-core']:GetCoreObject()
+ESX = exports['es_extended']:getSharedObject()
 PlayerData = {}
 
 local function createProperty(property)
-	PropertiesTable[property.property_id] = Property:new(property)
+    PropertiesTable[property.property_id] = Property:new(property)
 end
 RegisterNetEvent('ps-housing:client:addProperty', createProperty)
 
-RegisterNetEvent('ps-housing:client:removeProperty', function (property_id)
-	local property = Property.Get(property_id)
+RegisterNetEvent('ps-housing:client:removeProperty', function(property_id)
+    local property = Property.Get(property_id)
 
-	if property then
-		property:RemoveProperty()
-	end
+    if property then
+        property:RemoveProperty()
+    end
 
-	PropertiesTable[property_id] = nil
+    PropertiesTable[property_id] = nil
 end)
 
 function InitialiseProperties(properties)
+    Wait(2000)
     Debug("Initialising properties")
-    PlayerData = QBCore.Functions.GetPlayerData()
+    PlayerData = ESX.GetPlayerData()
 
     for k, v in pairs(Config.Apartments) do
         ApartmentsTable[k] = Apartment:new(v)
     end
 
-	if not properties then
-    	properties = lib.callback.await('ps-housing:server:requestProperties')
-	end
-	
+    if not properties then
+        properties = lib.callback.await('ps-housing:server:requestProperties', false)
+    end
+
     for k, v in pairs(properties) do
         createProperty(v.propertyData)
     end
@@ -36,16 +37,21 @@ function InitialiseProperties(properties)
 
     Debug("Initialised properties")
 end
-AddEventHandler("QBCore:Client:OnPlayerLoaded", InitialiseProperties)
-RegisterNetEvent('ps-housing:client:initialiseProperties', InitialiseProperties)
 
-AddEventHandler("onResourceStart", function(resourceName) -- Used for when the resource is restarted while in game
-	if (GetCurrentResourceName() == resourceName) then
-        InitialiseProperties()
-	end
+RegisterNetEvent("esx:playerLoaded", function()
+    InitialiseProperties()
+end)
+RegisterNetEvent('ps-housing:client:initialiseProperties', function(Properties)
+    InitialiseProperties(Properties)
 end)
 
-RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+AddEventHandler("onResourceStart", function(resourceName) -- Used for when the resource is restarted while in game
+    if (GetCurrentResourceName() == resourceName) then
+        InitialiseProperties()
+    end
+end)
+
+RegisterNetEvent('esx:setJob', function(job)
     PlayerData.job = job
 end)
 
@@ -68,19 +74,19 @@ RegisterNetEvent('ps-housing:client:setupSpawnUI', function(cData)
 end)
 
 AddEventHandler("onResourceStop", function(resourceName)
-	if (GetCurrentResourceName() == resourceName) then
-		if Modeler.IsMenuActive then
-			Modeler:CloseMenu()
-		end
+    if (GetCurrentResourceName() == resourceName) then
+        if Modeler.IsMenuActive then
+            Modeler:CloseMenu()
+        end
 
-		for k, v in pairs(PropertiesTable) do
-			v:RemoveProperty()
-		end
+        for k, v in pairs(PropertiesTable) do
+            v:RemoveProperty()
+        end
 
         for k, v in pairs(ApartmentsTable) do
             v:RemoveApartment()
         end
-	end
+    end
 end)
 
 exports('GetProperties', function()
@@ -107,7 +113,7 @@ end)
 lib.callback.register('ps-housing:cb:confirmPurchase', function(amount, street, id)
     return lib.alertDialog({
         header = 'Purchase Confirmation',
-        content = 'Are you sure you want to purchase '..street..' ' .. id .. ' for $' .. amount .. '?',
+        content = 'Are you sure you want to purchase ' .. street .. ' ' .. id .. ' for $' .. amount .. '?',
         centered = true,
         cancel = true,
         labels = {
@@ -120,7 +126,7 @@ end)
 lib.callback.register('ps-housing:cb:confirmRaid', function(street, id)
     return lib.alertDialog({
         header = 'Raid',
-        content = 'Do you want to raid '..street..' ' .. id .. '?',
+        content = 'Do you want to raid ' .. street .. ' ' .. id .. '?',
         centered = true,
         cancel = true,
         labels = {

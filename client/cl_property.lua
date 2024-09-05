@@ -32,7 +32,7 @@ function Property:new(propertyData)
     propertyData.furnitures = {}
     self.propertyData = propertyData
 
-    local citizenid = PlayerData.citizenid
+    local citizenid = ESX.GetPlayerData().identifier
 
     self.owner = propertyData.owner == citizenid
     self.has_access = lib.table.contains(self.propertyData.has_access, citizenid)
@@ -125,7 +125,18 @@ function Property:RegisterPropertyEntrance()
         local data = lib.callback.await("ps-housing:cb:getPropertyInfo", false, self.property_id)
         if not data then return end
 
-        local content = "**Owner:** " .. data.owner .. "  \n" .. "**Description:** " .. data.description .. "  \n" .. "**Street:** " .. data.street .. "  \n" .. "**Region:** " .. data.region .. "  \n" .. "**Shell:** " .. data.shell .. "  \n" .. "**For Sale:** " .. (data.for_sale and "Yes" or "No")
+        local content = "**Owner:** " ..
+            data.owner ..
+            "  \n" ..
+            "**Description:** " ..
+            data.description ..
+            "  \n" ..
+            "**Street:** " ..
+            data.street ..
+            "  \n" ..
+            "**Region:** " ..
+            data.region ..
+            "  \n" .. "**Shell:** " .. data.shell .. "  \n" .. "**For Sale:** " .. (data.for_sale and "Yes" or "No")
 
         if data.for_sale then
             content = content .. "  \n" .. "**Price:** " .. data.price
@@ -140,7 +151,8 @@ function Property:RegisterPropertyEntrance()
 
     local targetName = string.format("%s_%s", self.propertyData.street, self.property_id)
 
-    self.entranceTarget = Framework[Config.Target].AddEntrance(door, size, heading, self.property_id, enter, raid, showcase, showData, targetName)
+    self.entranceTarget = Framework[Config.Target].AddEntrance(door, size, heading, self.property_id, enter, raid,
+        showcase, showData, targetName)
 
     if self.owner or self.has_access then
         self:CreateBlip()
@@ -423,7 +435,8 @@ function Property:OpenDoorbellMenu()
 end
 
 function Property:LoadFurniture(furniture)
-    local coords = GetOffsetFromEntityInWorldCoords(self.shellObj, furniture.position.x, furniture.position.y, furniture.position.z)
+    local coords = GetOffsetFromEntityInWorldCoords(self.shellObj, furniture.position.x, furniture.position.y,
+        furniture.position.z)
     local hash = furniture.object
 
     lib.requestModel(hash)
@@ -432,7 +445,7 @@ function Property:LoadFurniture(furniture)
     SetEntityRotation(entity, furniture.rotation.x, furniture.rotation.y, furniture.rotation.z, 2, true)
 
     if furniture.type == 'door' and Config.DynamicDoors then
-        Debug("Object: "..furniture.label.." wont be frozen")
+        Debug("Object: " .. furniture.label .. " wont be frozen")
     else
         FreezeEntityPosition(entity, true)
     end
@@ -458,7 +471,7 @@ end
 
 function Property:LoadFurnitures()
     self.propertyData.furnitures = lib.callback.await('ps-housing:cb:getFurnitures', false, self.property_id) or {}
-    
+
     for i = 1, #self.propertyData.furnitures do
         local furniture = self.propertyData.furnitures[i]
         self:LoadFurniture(furniture)
@@ -467,7 +480,7 @@ end
 
 function Property:UnloadFurniture(furniture, index)
     local entity = furniture?.entity
-    if not entity then 
+    if not entity then
         for i = 1, #self.furnitureObjs do
             if self.furnitureObjs[i]?.id and furniture?.id and self.furnitureObjs[i].id == furniture.id then
                 entity = self.furnitureObjs[i]?.entity
@@ -591,7 +604,7 @@ local function findFurnitureDifference(new, old)
     return added, removed, edited
 end
 
--- I think this whole furniture sync is a bit shit, but I cbf thinking 
+-- I think this whole furniture sync is a bit shit, but I cbf thinking
 function Property:UpdateFurnitures(newFurnitures)
     if not self.inProperty then return end
 
@@ -607,7 +620,7 @@ function Property:UpdateFurnitures(newFurnitures)
         local furniture = removed[i]
         self:UnloadFurniture(furniture)
     end
-    
+
     for i = 1, #edited do
         local furniture = edited[i]
         self:UnloadFurniture(furniture)
@@ -656,7 +669,7 @@ end
 function Property:UpdateOwner(newOwner)
     self.propertyData.owner = newOwner
 
-    local citizenid = PlayerData.citizenid
+    local citizenid = PlayerData.identifier
 
     self.owner = newOwner == citizenid
 
@@ -685,7 +698,7 @@ function Property:UpdateDoor(newDoor, newStreet, newRegion)
 end
 
 function Property:UpdateHas_access(newHas_access)
-    local citizenid = PlayerData.citizenid
+    local citizenid = PlayerData.identifier
     self.propertyData.has_access = newHas_access
     self.has_access = lib.table.contains(newHas_access, citizenid)
 

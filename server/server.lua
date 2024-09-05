@@ -1,12 +1,11 @@
-QBCore = exports['qb-core']:GetCoreObject()
--- PSCore = exports['ps-core']:GetCoreObject()
+ESX = exports['es_extended']:getSharedObject()
 
 local dbloaded = false
 MySQL.ready(function()
     MySQL.query('SELECT * FROM properties', {}, function(result)
         if not result then return end
         if result.id then -- If only one result
-            result = {result}
+            result = { result }
         end
         for _, v in pairs(result) do
             local id = tostring(v.property_id)
@@ -27,6 +26,8 @@ MySQL.ready(function()
                 garage_data = json.decode(v.garage_data),
             }
             PropertiesTable[id] = Property:new(propertyData)
+
+            print(id)
         end
 
         dbloaded = true
@@ -41,7 +42,7 @@ lib.callback.register("ps-housing:server:requestProperties", function(source)
     return PropertiesTable
 end)
 
-AddEventHandler("ps-housing:server:registerProperty", function (propertyData, preventEnter) -- triggered by realtor job
+AddEventHandler("ps-housing:server:registerProperty", function(propertyData, preventEnter) -- triggered by realtor job
     local propertyData = propertyData
 
     propertyData.owner = propertyData.owner or nil
@@ -50,11 +51,13 @@ AddEventHandler("ps-housing:server:registerProperty", function (propertyData, pr
     propertyData.furnitures = propertyData.furnitures or {}
     propertyData.door_data = propertyData.door_data or {}
     propertyData.garage_data = propertyData.garage_data or {}
-    
-    local cols = "(owner_citizenid, street, region, description, has_access, extra_imgs, furnitures, for_sale, price, shell, apartment, door_data, garage_data)"
-    local vals = "(@owner_citizenid, @street, @region, @description, @has_access, @extra_imgs, @furnitures, @for_sale, @price, @shell, @apartment, @door_data, @garage_data)"
 
-    local id = MySQL.insert.await("INSERT INTO properties " .. cols .. " VALUES " .. vals , {
+    local cols =
+    "(owner_citizenid, street, region, description, has_access, extra_imgs, furnitures, for_sale, price, shell, apartment, door_data, garage_data)"
+    local vals =
+    "(@owner_citizenid, @street, @region, @description, @has_access, @extra_imgs, @furnitures, @for_sale, @price, @shell, @apartment, @door_data, @garage_data)"
+
+    local id = MySQL.insert.await("INSERT INTO properties " .. cols .. " VALUES " .. vals, {
         ["@owner_citizenid"] = propertyData.owner or nil,
         ["@street"] = propertyData.street,
         ["@region"] = propertyData.region,
@@ -72,12 +75,12 @@ AddEventHandler("ps-housing:server:registerProperty", function (propertyData, pr
     id = tostring(id)
     propertyData.property_id = id
     PropertiesTable[id] = Property:new(propertyData)
-    
+
     TriggerClientEvent("ps-housing:client:addProperty", -1, propertyData)
 
     if propertyData.apartment and not preventEnter then
-        local player = QBCore.Functions.GetPlayerByCitizenId(propertyData.owner)
-        local src = player.PlayerData.source
+        local player = ESX.GetPlayerFromIdentifier(propertyData.owner)
+        local src = player.source
 
         local property = Property.Get(id)
         property:PlayerEnter(src)
@@ -85,7 +88,7 @@ AddEventHandler("ps-housing:server:registerProperty", function (propertyData, pr
         Wait(1000)
 
         local query = "SELECT skin FROM playerskins WHERE citizenid = ?"
-        local result = MySQL.Sync.fetchAll(query, {propertyData.owner})
+        local result = MySQL.Sync.fetchAll(query, { propertyData.owner })
 
         if result and result[1] then
             Debug("Player: " .. propertyData.owner .. " skin already exists!")
@@ -94,7 +97,8 @@ AddEventHandler("ps-housing:server:registerProperty", function (propertyData, pr
             Debug("Player: " .. propertyData.owner .. " is creating a new character!")
         end
 
-        Framework[Config.Notify].Notify(src, "Open radial menu for furniture menu and place down your stash and clothing locker.", "info")
+        Framework[Config.Notify].Notify(src,
+            "Open radial menu for furniture menu and place down your stash and clothing locker.", "info")
 
         -- This will create the stash for the apartment and migrate the items from the old apartment stash if applicable
         TriggerEvent("ps-housing:server:createApartmentStash", propertyData.owner, id)
@@ -104,15 +108,18 @@ end)
 lib.callback.register("ps-housing:cb:GetOwnedApartment", function(source, cid)
     Debug("ps-housing:cb:GetOwnedApartment", source, cid)
     if cid ~= nil then
-        local result = MySQL.query.await('SELECT * FROM properties WHERE owner_citizenid = ? AND apartment IS NOT NULL AND apartment <> ""', { cid })
+        local result = MySQL.query.await(
+            'SELECT * FROM properties WHERE owner_citizenid = ? AND apartment IS NOT NULL AND apartment <> ""', { cid })
         if result[1] ~= nil then
             return result[1]
         end
         return nil
     else
         local src = source
-        local Player = QBCore.Functions.GetPlayer(src)
-        local result = MySQL.query.await('SELECT * FROM properties WHERE owner_citizenid = ? AND apartment IS NOT NULL AND apartment <> ""', { Player.PlayerData.citizenid })
+        local Player = ESX.GetPlayerFromId(src)
+        local result = MySQL.query.await(
+            'SELECT * FROM properties WHERE owner_citizenid = ? AND apartment IS NOT NULL AND apartment <> ""',
+            { Player.identifier })
         if result[1] ~= nil then
             return result[1]
         end
@@ -128,12 +135,12 @@ AddEventHandler("ps-housing:server:updateProperty", function(type, property_id, 
 end)
 
 AddEventHandler("onResourceStart", function(resourceName) -- Used for when the resource is restarted while in game
-	if (GetCurrentResourceName() == resourceName) then
+    if (GetCurrentResourceName() == resourceName) then
         while not dbloaded do
             Wait(100)
         end
         TriggerClientEvent('ps-housing:client:initialiseProperties', -1, PropertiesTable)
-	end 
+    end
 end)
 
 RegisterNetEvent("ps-housing:server:createNewApartment", function(aptLabel)
@@ -147,7 +154,8 @@ RegisterNetEvent("ps-housing:server:createNewApartment", function(aptLabel)
 
     local propertyData = {
         owner = citizenid,
-        description = string.format("This is %s's apartment in %s", PlayerData.charinfo.firstname .. " " .. PlayerData.charinfo.lastname, apartment.label),
+        description = string.format("This is %s's apartment in %s",
+            PlayerData.getName(), apartment.label),
         for_sale = 0,
         shell = apartment.shell,
         apartment = apartment.label,
@@ -160,31 +168,16 @@ RegisterNetEvent("ps-housing:server:createNewApartment", function(aptLabel)
     TriggerEvent("ps-housing:server:registerProperty", propertyData)
 end)
 
--- we show the character creator if they spawn without starting appartment and doesn't have skin set
-RegisterNetEvent("QBCore:Server:OnPlayerLoaded", function()
-    if Config.StartingApartment then return end
-
-    local src = source
-    local citizenid = GetCitizenid(src)
-    local query = "SELECT skin FROM playerskins WHERE citizenid = ?"
-    local result = MySQL.Sync.fetchAll(query, {citizenid})
-
-    if result and result[1] then
-        Debug("Player: " .. citizenid .. " skin already exists!")
-    else
-        TriggerClientEvent("qb-clothes:client:CreateFirstCharacter", src)
-        Debug("Player: " .. citizenid .. " is creating a new character!")
-    end
-end)
-
 -- Creates apartment stash
 -- If player has an existing apartment from qb-apartments, it will transfer the items over to the new apartment stash
 RegisterNetEvent("ps-housing:server:createApartmentStash", function(citizenId, propertyId)
     local stashId = string.format("property_%s", propertyId)
 
     -- Check for existing apartment and corresponding stash
-    local result = MySQL.query.await('SELECT items, stash FROM stashitems WHERE stash IN (SELECT name FROM apartments WHERE citizenid = ?)', { citizenId }) 
-   
+    local result = MySQL.query.await(
+        'SELECT items, stash FROM stashitems WHERE stash IN (SELECT name FROM apartments WHERE citizenid = ?)',
+        { citizenId })
+
     local items = {}
     if result[1] ~= nil then
         items = json.decode(result[1].items)
@@ -203,7 +196,7 @@ RegisterNetEvent('qb-apartments:returnBucket', function()
     Player(src).state:set('instance', 0, true)
 end)
 
-AddEventHandler("ps-housing:server:addTenantToApartment", function (data)
+AddEventHandler("ps-housing:server:addTenantToApartment", function(data)
     local apartment = data.apartment
     local targetSrc = tonumber(data.targetSrc)
     local realtorSrc = data.realtorSrc
@@ -232,10 +225,11 @@ AddEventHandler("ps-housing:server:addTenantToApartment", function (data)
         if not newApartment then return end
 
         local citizenid = GetCitizenid(targetSrc, realtorSrc)
-        local targetToAdd = QBCore.Functions.GetPlayerByCitizenId(citizenid).PlayerData
+        local targetToAdd = ESX.GetPlayerFromIdentifier(citizenid)
         local propertyData = {
             owner = targetCitizenid,
-            description = string.format("This is %s's apartment in %s", targetToAdd.charinfo.firstname .. " " .. targetToAdd.charinfo.lastname, apartment.label),
+            description = string.format("This is %s's apartment in %s",
+                targetToAdd.getName(), apartment.label),
             for_sale = 0,
             shell = newApartment.shell,
             apartment = newApartment.label,
@@ -243,10 +237,14 @@ AddEventHandler("ps-housing:server:addTenantToApartment", function (data)
 
         Debug("Creating new apartment for " .. GetPlayerName(targetSrc) .. " in " .. newApartment.label)
 
-        Framework[Config.Logs].SendLog("Creating new apartment for " .. GetPlayerName(targetSrc) .. " in " .. newApartment.label)
+        Framework[Config.Logs].SendLog("Creating new apartment for " ..
+            GetPlayerName(targetSrc) .. " in " .. newApartment.label)
 
-        Framework[Config.Notify].Notify(targetSrc, "Your apartment is now at "..apartment, "success")
-        Framework[Config.Notify].Notify(realtorSrc, "You have added ".. targetToAdd.charinfo.firstname .. " " .. targetToAdd.charinfo.lastname .. " to apartment "..apartment, "success")
+        Framework[Config.Notify].Notify(targetSrc, "Your apartment is now at " .. apartment, "success")
+        Framework[Config.Notify].Notify(realtorSrc,
+            "You have added " ..
+            targetToAdd.getName() .. " to apartment " .. apartment,
+            "success")
 
         TriggerEvent("ps-housing:server:registerProperty", propertyData, true)
 
@@ -259,11 +257,14 @@ AddEventHandler("ps-housing:server:addTenantToApartment", function (data)
     property:UpdateApartment(data)
 
     local citizenid = GetCitizenid(targetSrc, realtorSrc)
-    local targetToAdd = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-    local targetPlayer = targetToAdd.PlayerData
+    local targetToAdd = ESX.GetPlayerFromIdentifier(citizenid)
+    local targetPlayer = targetToAdd
 
-    Framework[Config.Notify].Notify(targetSrc, "Your apartment is now at "..apartment, "success")
-    Framework[Config.Notify].Notify(realtorSrc, "You have added ".. targetPlayer.charinfo.firstname .. " " .. targetPlayer.charinfo.lastname .. " to apartment "..apartment, "success")
+    Framework[Config.Notify].Notify(targetSrc, "Your apartment is now at " .. apartment, "success")
+    Framework[Config.Notify].Notify(realtorSrc,
+        "You have added " ..
+        targetPlayer.getName() .. " to apartment " .. apartment,
+        "success")
 end)
 
 exports('IsOwner', function(src, property_id)
@@ -275,32 +276,38 @@ exports('IsOwner', function(src, property_id)
 end)
 
 function GetCitizenid(targetSrc, callerSrc)
-    local Player = QBCore.Functions.GetPlayer(tonumber(targetSrc))
+    local Player = ESX.GetPlayerFromId(tonumber(targetSrc))
     if not Player then
         Framework[Config.Notify].Notify(callerSrc, "Player not found.", "error")
         return
     end
-    local PlayerData = Player.PlayerData
-    local citizenid = PlayerData.citizenid
-    return citizenid
+    return Player.identifier
 end
 
 function GetCharName(src)
-    local Player = QBCore.Functions.GetPlayer(tonumber(src))
+    local Player = ESX.GetPlayerFromId(tonumber(src))
     if not Player then return end
-    local PlayerData = Player.PlayerData
-    return PlayerData.charinfo.firstname .. " " .. PlayerData.charinfo.lastname
+    return Player.getName()
+end
+
+function GetOfflinePlayerName(identifier)
+    local user = MySQL.query.await("SELECT firstname, lastname FROM users WHERE identifier = ?", { identifier })
+
+    if user and user[1] then
+        return user[1].firstname .. ' ' .. user[1].lastname
+    else
+        return "Unknown"
+    end
 end
 
 function GetPlayerData(src)
-    local Player = QBCore.Functions.GetPlayer(tonumber(src))
+    local Player = ESX.GetPlayerFromId(tonumber(src))
     if not Player then return end
-    local PlayerData = Player.PlayerData
-    return PlayerData
+    return Player
 end
 
 function GetPlayer(src)
-    local Player = QBCore.Functions.GetPlayer(tonumber(src))
+    local Player = ESX.GetPlayerFromId(tonumber(src))
     if not Player then return end
     return Player
 end

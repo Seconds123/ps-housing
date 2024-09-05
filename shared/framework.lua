@@ -18,7 +18,7 @@ if IsDuplicityVersion() then
 
     function Framework.ox.Notify(src, message, type)
         type = type == "inform" and "info" or type
-        TriggerClientEvent("ox_lib:notify", src, {title="Property", description=message, type=type})
+        TriggerClientEvent("ox_lib:notify", src, { title = "Property", description = message, type = type })
     end
 
     function Framework.qb.Notify(src, message, type)
@@ -39,16 +39,16 @@ if IsDuplicityVersion() then
             TriggerEvent('qb-log:server:CreateLog', 'pshousing', 'Housing System', 'blue', message)
         end
     end
-    
+
     function Framework.ox.SendLog(message)
-            -- noop
+        -- noop
     end
 
     return
 end
 
 local function hasApartment(apts)
-    for propertyId, _  in pairs(apts) do
+    for propertyId, _ in pairs(apts) do
         local property = PropertiesTable[propertyId]
         if property.owner then
             return true
@@ -260,7 +260,7 @@ Framework.qb = {
         exports['qb-radialmenu']:RemoveOption(id)
     end,
 
-    AddTargetEntity = function (entity, label, icon, action)
+    AddTargetEntity = function(entity, label, icon, action)
         exports["qb-target"]:AddTargetEntity(entity, {
             options = {
                 {
@@ -272,11 +272,11 @@ Framework.qb = {
         })
     end,
 
-    RemoveTargetEntity = function (entity)
+    RemoveTargetEntity = function(entity)
         exports["qb-target"]:RemoveTargetEntity(entity)
     end,
 
-    OpenInventory = function (stash, stashConfig)
+    OpenInventory = function(stash, stashConfig)
         TriggerServerEvent("inventory:server:OpenInventory", "stash", stash, stashConfig)
         TriggerEvent("inventory:client:SetCurrentStash", stash)
     end,
@@ -285,7 +285,7 @@ Framework.qb = {
 Framework.ox = {
     Notify = function(message, type)
         type = type == "inform" and "info" or type
-        
+
         lib.notify({
             title = 'Property',
             description = message,
@@ -293,7 +293,7 @@ Framework.ox = {
         })
     end,
 
-    AddEntrance = function (coords, size, heading, propertyId, enter, raid, showcase, showData, _)
+    AddEntrance = function(coords, size, heading, propertyId, enter, raid, showcase, showData, _)
         local property_id = propertyId
 
         local handler = exports.ox_target:addBoxZone({
@@ -318,8 +318,8 @@ Framework.ox = {
                     canInteract = function()
                         -- local property = Property.Get(property_id)
                         -- if property.propertyData.owner ~= nil then return false end -- if its owned, it cannot be showcased
-                        
-                        local job = PlayerData.job
+
+                        local job = ESX.GetPlayerData().job
                         local jobName = job.name
 
                         return RealtorJobs[jobName]
@@ -330,10 +330,9 @@ Framework.ox = {
                     icon = "fas fa-circle-info",
                     onSelect = showData,
                     canInteract = function()
-                        local job = PlayerData.job
+                        local job = ESX.GetPlayerData().job
                         local jobName = job.name
-                        local onDuty = job.onduty
-                        return RealtorJobs[jobName] and onDuty
+                        return RealtorJobs[jobName]
                     end,
                 },
                 {
@@ -350,12 +349,11 @@ Framework.ox = {
                     icon = "fas fa-building-shield",
                     onSelect = raid,
                     canInteract = function()
-                        local job = PlayerData.job
+                        local job = ESX.GetPlayerData().job
                         local jobName = job.name
-                        local gradeAllowed = tonumber(job.grade.level) >= Config.MinGradeToRaid
-                        local onDuty = job.onduty
+                        local gradeAllowed = tonumber(job.grade) >= Config.MinGradeToRaid
 
-                        return PoliceJobs[jobName] and onDuty and gradeAllowed
+                        return PoliceJobs[jobName] and gradeAllowed
                     end,
                 },
             },
@@ -364,7 +362,7 @@ Framework.ox = {
         return handler
     end,
 
-    AddApartmentEntrance = function (coords, size, heading, apartment, enter, seeAll, seeAllToRaid, _)        
+    AddApartmentEntrance = function(coords, size, heading, apartment, enter, seeAll, seeAllToRaid, _)
         local handler = exports.ox_target:addBoxZone({
             coords = vector3(coords.x, coords.y, coords.z),
             size = vector3(size.y, size.x, size.z),
@@ -404,7 +402,7 @@ Framework.ox = {
         return handler
     end,
 
-    AddDoorZoneInside = function (coords, size, heading, leave, checkDoor)
+    AddDoorZoneInside = function(coords, size, heading, leave, checkDoor)
         local handler = exports.ox_target:addBoxZone({
             coords = vector3(coords.x, coords.y, coords.z), --z = 3.0
             size = vector3(size.y, size.x, size.z),
@@ -429,7 +427,7 @@ Framework.ox = {
         return handler
     end,
 
-    AddDoorZoneInsideTempShell = function (coords, size, heading, leave)
+    AddDoorZoneInsideTempShell = function(coords, size, heading, leave)
         local handler = exports.ox_target:addBoxZone({
             coords = vector3(coords.x, coords.y, coords.z), --z = 3.0
             size = vector3(size.y, size.x, size.z),
@@ -448,7 +446,7 @@ Framework.ox = {
         return handler
     end,
 
-    RemoveTargetZone = function (handler)
+    RemoveTargetZone = function(handler)
         exports.ox_target:removeZone(handler)
     end,
 
@@ -465,7 +463,7 @@ Framework.ox = {
         lib.removeRadialItem(id)
     end,
 
-    AddTargetEntity = function (entity, label, icon, action)
+    AddTargetEntity = function(entity, label, icon, action)
         exports.ox_target:addLocalEntity(entity, {
             {
                 name = label,
@@ -476,11 +474,11 @@ Framework.ox = {
         })
     end,
 
-    RemoveTargetEntity = function (entity)
+    RemoveTargetEntity = function(entity)
         exports.ox_target:removeLocalEntity(entity)
     end,
 
-    OpenInventory = function (stash, stashConfig)
+    OpenInventory = function(stash, stashConfig)
         exports.ox_inventory:openInventory('stash', stash)
     end,
 }
